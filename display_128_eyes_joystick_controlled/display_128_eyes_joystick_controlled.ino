@@ -1,8 +1,11 @@
 /*********************************************************************
-
+  DISPLAY_128_EYES_JOYSTICK
+  jwgcurrie
   This program is for a 128x128 size display using SPi to communicate
   5 pins are required to interface 
-  SH1107 is used here with Arduino mega
+  SH1107 is used here with Arduino mega.
+  
+  Abstract eyes are displayed - controlled by a joystick
 *********************************************************************/
 
 
@@ -12,21 +15,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 
-
-//#define OLED_MOSI     10
-//#define OLED_CLK      8
-//#define OLED_DC       7
-//#define OLED_CS       5
-//#define OLED_RST      9
-
+// Display pins on MEGA
 #define mosi_pin 51
 #define sclk_pin 52
 #define dc_pin 8
 #define rst_pin 9
 #define cs_pin 53
 
-#define pot A0
-
+// Joystick Module
+#define joy_x A0
+#define joy_y A1
 
 // Create the OLED display
 Adafruit_SH1107 display = Adafruit_SH1107(128, 128, mosi_pin, sclk_pin, dc_pin, rst_pin, cs_pin);
@@ -64,60 +62,78 @@ void setup()   {
 
   //display.setContrast (0); // dim display
   // Start OLED
-  display.begin(0, true); // we dont use the i2c address but we will reset!
+  display.begin(0, true); 
 
 
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
   // internally, this will display the splashscreen.
-  display.display();
+  //display.display();
 
   // Clear the buffer.
   display.clearDisplay();
 
 
+  display.print("eyes_joystick_controlled - jwgcurrie");
+  display.display();
+  delay(4000);
+  display.clearDisplay();
+
 }
 
 
 void loop() {
-  int input = analogRead(pot);
+  int x = analogRead(joy_x);
+  int y = analogRead(joy_y);
 
-  input = input/28;
-  Serial.println(input);
+  y = 1023 - y;
 
-  set_eyes(26, 79, input);
+  // Mapped to eye size on 128px
+  x = x/28;
+  y = y/28;
+
+  Serial.print("X: ");
+  Serial.print(x);
+  Serial.print(" Y: ");
+  Serial.println(y);
+
+  set_eyes(26, 79, x, y);
 
   
 
 
 }
 
-void set_eyes(int L_pupil_x0, int R_pupil_x0, int d_x)
+void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
 {
-      // Left eye
-    int L_eye_x0 = display.width() * 0.125;
-    int L_eye_y0 = (display.height() - 50)/2;
+    // Eye characteristics
     int eye_width = 50;
     int eye_height = 50;
     int eye_radius = 20;
-
-    display.drawRoundRect(L_eye_x0, L_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
-    // Pupil
-    L_pupil_x0 = L_pupil_x0 + d_x;
-    int L_pupil_y0 = 49;
     int pupil_radius = 10;
-    display.fillCircle(L_pupil_x0, L_pupil_y0, pupil_radius, SH110X_WHITE);
 
     
+    // Left eye
+    int L_eye_x0 = display.width()/8;
+    int L_eye_y0 = (display.height() - eye_height)/2;
+    
+    display.drawRoundRect(L_eye_x0, L_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
+    
+    // Left pupil
+    pupil_x0 = pupil_x0 + d_x;
+    pupil_y0 = 49 + d_y;
+    // TODO figure out what pupil_y is - what is the 49?
+    display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
+
     // Right eye
     int R_eye_x0 = 64;
     int R_eye_y0 = L_eye_y0;
 
     display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
-    // Pupil
-    R_pupil_x0 = R_pupil_x0 + d_x;
-    int R_pupil_y0 = 49;
-    display.fillCircle(R_pupil_x0, R_pupil_y0, pupil_radius, SH110X_WHITE);
+    // Right Pupil
+    pupil_x0 = 74 + d_x;
+    pupil_y0 = 49 + d_y;
+    display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
     
     display.display();
     display.clearDisplay();
