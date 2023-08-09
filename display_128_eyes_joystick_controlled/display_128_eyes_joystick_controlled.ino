@@ -8,6 +8,11 @@
   Abstract eyes are displayed - controlled by a joystick
 *********************************************************************/
 
+// Timer
+unsigned long startMillis;
+unsigned long currentMillis;
+const unsigned long period = 10000;
+
 
 
 #include <SPI.h>
@@ -25,6 +30,7 @@
 // Joystick Module
 #define joy_x A0
 #define joy_y A1
+#define joy_push 22
 
 // Create the OLED display
 Adafruit_SH1107 display = Adafruit_SH1107(128, 128, mosi_pin, sclk_pin, dc_pin, rst_pin, cs_pin);
@@ -67,8 +73,6 @@ void setup()   {
   //display.setContrast (0); // dim display
   // Start OLED
   display.begin(0, true); 
-
-
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
   // internally, this will display the splashscreen.
@@ -82,12 +86,24 @@ void setup()   {
   display.display();
   display.clearDisplay();
 
+  startMillis = millis();
+
 }
 
 
 void loop() {
-  analog_input(joy_x, joy_y, x_invert, y_invert);
-  set_eyes(26, 49, x, y);
+  currentMillis = millis();
+
+  if(currentMillis - startMillis >= period)
+  {
+    //blink(26,49,x,y);
+    startMillis = currentMillis;
+  }
+  else
+  {
+    analog_input(joy_x, joy_y, x_invert, y_invert);
+    set_eyes(26,49,x,y);
+  }
 }
 
 
@@ -110,8 +126,8 @@ void analog_input(int pin_x, int pin_y, bool x_invert, bool y_invert)
     y = 1023 - y;
   }
 
-  x = x/28;
-  y = y/28;
+  x = x/36;
+  y = y/36;
 }
 
 void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
@@ -130,7 +146,7 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
     // Left eye
     int L_eye_x0 = display.width()/8;
     int L_eye_y0 = (display.height() - eye_height)/2;
-    
+    int R_eye_y0 = L_eye_y0;
     display.drawRoundRect(L_eye_x0, L_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
     
     // Left pupil
@@ -141,7 +157,6 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
 
     // Right eye
     int R_eye_x0 = display.width()/2;
-    int R_eye_y0 = L_eye_y0;
 
     display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
     // Right Pupil
@@ -152,7 +167,51 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
     display.clearDisplay();
 }
 
-void blink(int pupil_x0, int pupil_y0, int speed)
+void blink(int pupil_x0, int pupil_y0, int d_x, int d_y)
 {
+    // Eye characteristics
+    int eye_width = 50;
+    int eye_height = 50;
+    int eye_radius = 20;
+    int pupil_radius = 10;
+    int L_eye_y0 = (display.height() - eye_height)/2;
+    int R_eye_y0 = L_eye_y0;
 
+    for(int i = 1; i <= 5; i++)
+    {
+      eye_height = eye_height - 10;
+      L_eye_y0 = L_eye_y0 + 5;
+      R_eye_y0 = L_eye_y0;
+      Serial.println(eye_height);
+
+
+
+    
+    // Scale joystick readings to pixelspace 
+    // Calculate pixelspace limits
+    int L_min_x = display.width()/8 + pupil_radius;
+    int L_max_x = display.width()/2 - pupil_radius;
+
+    // Left eye
+    int L_eye_x0 = display.width()/8;
+    
+    display.drawRoundRect(L_eye_x0, L_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
+    
+    // Left pupil
+    pupil_x0 = pupil_x0 + d_x;
+    pupil_y0 = pupil_y0 + d_y;
+    
+    //display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
+
+    // Right eye
+    int R_eye_x0 = display.width()/2;
+
+    display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
+    // Right Pupil
+    pupil_x0 = R_eye_x0 + pupil_radius + d_x;
+    //display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
+    
+    display.display();
+    display.clearDisplay();
+    }
 }
