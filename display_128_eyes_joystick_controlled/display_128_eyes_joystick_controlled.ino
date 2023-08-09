@@ -67,6 +67,17 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
   bool x_invert = 0;
   bool y_invert = 1;
 
+  // Eye characteristics
+      // Eye characteristics
+    int eye_width = 50;
+    int eye_height = 50;
+    int eye_radius = 20;
+    int pupil_radius = 10;
+    int L_eye_y0 = (display.height() - eye_height)/2;
+    int R_eye_y0 = L_eye_y0;
+    int L_eye_x0 = display.width()/8;
+    int R_eye_x0 = display.width()/2;
+
 void setup()   {
   Serial.begin(9600);
 
@@ -96,7 +107,7 @@ void loop() {
 
   if(currentMillis - startMillis >= period)
   {
-    //blink(26,49,x,y);
+    blink();
     startMillis = currentMillis;
   }
   else
@@ -132,17 +143,6 @@ void analog_input(int pin_x, int pin_y, bool x_invert, bool y_invert)
 
 void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
 {
-    // Eye characteristics
-    int eye_width = 50;
-    int eye_height = 50;
-    int eye_radius = 20;
-    int pupil_radius = 10;
-
-    // Scale joystick readings to pixelspace 
-    // Calculate pixelspace limits
-    int L_min_x = display.width()/8 + pupil_radius;
-    int L_max_x = display.width()/2 - pupil_radius;
-
     // Left eye
     int L_eye_x0 = display.width()/8;
     int L_eye_y0 = (display.height() - eye_height)/2;
@@ -152,66 +152,30 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
     // Left pupil
     pupil_x0 = pupil_x0 + d_x;
     pupil_y0 = pupil_y0 + d_y;
-    
     display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
 
     // Right eye
     int R_eye_x0 = display.width()/2;
-
     display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
+    
     // Right Pupil
     pupil_x0 = R_eye_x0 + pupil_radius + d_x;
     display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
     
+    // Display and refresh
     display.display();
     display.clearDisplay();
 }
 
-void blink(int pupil_x0, int pupil_y0, int d_x, int d_y)
+void blink()
 {
-    // Eye characteristics
-    int eye_width = 50;
-    int eye_height = 50;
-    int eye_radius = 20;
-    int pupil_radius = 10;
-    int L_eye_y0 = (display.height() - eye_height)/2;
-    int R_eye_y0 = L_eye_y0;
+    int blink_eye_height = eye_height - 32;
+    int blink_L_eye_y0 = L_eye_y0 + 16;
+    int blink_R_eye_y0 = blink_L_eye_y0;
 
-    for(int i = 1; i <= 5; i++)
-    {
-      eye_height = eye_height - 10;
-      L_eye_y0 = L_eye_y0 + 5;
-      R_eye_y0 = L_eye_y0;
-      Serial.println(eye_height);
-
-
-
-    
-    // Scale joystick readings to pixelspace 
-    // Calculate pixelspace limits
-    int L_min_x = display.width()/8 + pupil_radius;
-    int L_max_x = display.width()/2 - pupil_radius;
-
-    // Left eye
-    int L_eye_x0 = display.width()/8;
-    
-    display.drawRoundRect(L_eye_x0, L_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
-    
-    // Left pupil
-    pupil_x0 = pupil_x0 + d_x;
-    pupil_y0 = pupil_y0 + d_y;
-    
-    //display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
-
-    // Right eye
-    int R_eye_x0 = display.width()/2;
-
-    display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
-    // Right Pupil
-    pupil_x0 = R_eye_x0 + pupil_radius + d_x;
-    //display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
-    
+    display.drawRoundRect(L_eye_x0, blink_L_eye_y0, eye_width, blink_eye_height, eye_radius, SH110X_WHITE);
+    display.drawRoundRect(R_eye_x0, blink_R_eye_y0, eye_width, blink_eye_height, eye_radius, SH110X_WHITE);
     display.display();
     display.clearDisplay();
-    }
 }
+
