@@ -56,6 +56,10 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
   B00000000, B00110000
 };
 
+  int x;
+  int y;
+  bool x_invert = 0;
+  bool y_invert = 1;
 
 void setup()   {
   Serial.begin(9600);
@@ -76,32 +80,38 @@ void setup()   {
 
   display.print("eyes_joystick_controlled - jwgcurrie");
   display.display();
-  delay(4000);
   display.clearDisplay();
 
 }
 
 
 void loop() {
-  int x = analogRead(joy_x);
-  int y = analogRead(joy_y);
+  analog_input(joy_x, joy_y, x_invert, y_invert);
+  set_eyes(26, 49, x, y);
+}
 
-  y = 1023 - y;
 
-  // Mapped to eye size on 128px
+void analog_input(int pin_x, int pin_y, bool x_invert, bool y_invert)
+{
+  x = analogRead(pin_x);
+  y = analogRead(pin_y);
+
+  if(x_invert & y_invert)
+  {
+    x = 1023 - x;
+    y = 1023 - y;
+  }
+  else if(x_invert)
+  {
+    x = 1023 - x;
+  }
+  else if(y_invert)
+  {
+    y = 1023 - y;
+  }
+
   x = x/28;
   y = y/28;
-
-  Serial.print("X: ");
-  Serial.print(x);
-  Serial.print(" Y: ");
-  Serial.println(y);
-
-  set_eyes(26, 79, x, y);
-
-  
-
-
 }
 
 void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
@@ -112,7 +122,11 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
     int eye_radius = 20;
     int pupil_radius = 10;
 
-    
+    // Scale joystick readings to pixelspace 
+    // Calculate pixelspace limits
+    int L_min_x = display.width()/8 + pupil_radius;
+    int L_max_x = display.width()/2 - pupil_radius;
+
     // Left eye
     int L_eye_x0 = display.width()/8;
     int L_eye_y0 = (display.height() - eye_height)/2;
@@ -121,21 +135,24 @@ void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
     
     // Left pupil
     pupil_x0 = pupil_x0 + d_x;
-    pupil_y0 = 49 + d_y;
-    // TODO figure out what pupil_y is - what is the 49?
+    pupil_y0 = pupil_y0 + d_y;
+    
     display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
 
     // Right eye
-    int R_eye_x0 = 64;
+    int R_eye_x0 = display.width()/2;
     int R_eye_y0 = L_eye_y0;
 
     display.drawRoundRect(R_eye_x0, R_eye_y0, eye_width, eye_height, eye_radius, SH110X_WHITE);
     // Right Pupil
-    pupil_x0 = 74 + d_x;
-    pupil_y0 = 49 + d_y;
+    pupil_x0 = R_eye_x0 + pupil_radius + d_x;
     display.fillCircle(pupil_x0, pupil_y0, pupil_radius, SH110X_WHITE);
     
     display.display();
     display.clearDisplay();
+}
+
+void blink(int pupil_x0, int pupil_y0, int speed)
+{
 
 }
