@@ -3,17 +3,15 @@
   jwgcurrie
   This program is for a 128x128 size display using SPI to communicate
   5 pins are required to interface 
-  SH1107 is used here with Arduino mega.
+  SH1107 is used here with Arduino nano every.
   
-  Abstract eyes are displayed - controlled by a joystick
+  Abstract eyes are displayed - controlled by i2c input
 *********************************************************************/
 
 // Timer
 unsigned long startMillis;
 unsigned long currentMillis;
 const unsigned long period = 10000;
-
-
 
 #include <SPI.h>
 #include <Wire.h>
@@ -27,9 +25,7 @@ const unsigned long period = 10000;
 #define rst_pin 9
 #define cs_pin 8
 
-// Joystick Module
-#define joy_x A0
-#define joy_y A1
+
 
 // Create the OLED display
 Adafruit_SH1107 display = Adafruit_SH1107(128, 128, mosi_pin, sclk_pin, dc_pin, rst_pin, cs_pin);
@@ -63,6 +59,9 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
 
   int x;
   int y;
+
+
+
   bool x_invert = 0;
   bool y_invert = 1;
 
@@ -76,8 +75,12 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
     int L_eye_x0 = display.width()/8;
     int R_eye_x0 = display.width()/2;
 
+
 void setup()   {
+  Wire.begin(8); // join i2c bus with address #8
+  Wire.onReceive(receiveEvent); // register event
   Serial.begin(9600);
+
 
   //display.setContrast (0); // dim display
   // Start OLED
@@ -94,7 +97,7 @@ void setup()   {
   display.print("eyes_joystick_controlled - jwgcurrie");
   display.display();
   display.clearDisplay();
-delay(1000);
+  delay(1000);
   startMillis = millis();
 
 }
@@ -110,35 +113,11 @@ void loop() {
   }
   else
   {
-    analog_input(joy_x, joy_y, x_invert, y_invert);
     set_eyes(26,49,x,y);
-    Serial.println(joy_x);
   }
 }
 
 
-void analog_input(int pin_x, int pin_y, bool x_invert, bool y_invert)
-{
-  x = analogRead(pin_x);
-  y = analogRead(pin_y);
-
-  if(x_invert & y_invert)
-  {
-    x = 1023 - x;
-    y = 1023 - y;
-  }
-  else if(x_invert)
-  {
-    x = 1023 - x;
-  }
-  else if(y_invert)
-  {
-    y = 1023 - y;
-  }
-
-  x = x/36;
-  y = y/36;
-}
 
 void set_eyes(int pupil_x0, int pupil_y0, int d_x, int d_y)
 {
@@ -176,5 +155,31 @@ void blink()
     display.drawRoundRect(R_eye_x0, blink_R_eye_y0, eye_width, blink_eye_height, eye_radius, SH110X_WHITE);
     display.display();
     display.clearDisplay();
+}
+
+void receiveEvent(int size) {
+  while(Wire.available() > 0){
+
+    if(Wire.available() == 2)
+    {
+      x = Wire.read();
+      x = map_input(x);
+      Serial.print("X: ");
+      Serial.println(x);
+    }
+    else if(Wire.available() == 1)
+    {
+      y = Wire.read();
+      y = map_input(y);
+      Serial.print("Y: ");
+      Serial.println(y);
+    }
+  }
+}
+
+int map_input(int input) 
+{
+  input = input * 28/100;
+  return input;
 }
 

@@ -21,15 +21,16 @@ const unsigned long period = 10000;
 #include <Adafruit_SH110X.h>
 
 // Display pins on MEGA
-#define mosi_pin 11
-#define sclk_pin 13
-#define dc_pin 10
+#define mosi_pin 51
+#define sclk_pin 52
+#define dc_pin 8
 #define rst_pin 9
-#define cs_pin 8
+#define cs_pin 53
 
 // Joystick Module
 #define joy_x A0
 #define joy_y A1
+#define joy_push 22
 
 // Create the OLED display
 Adafruit_SH1107 display = Adafruit_SH1107(128, 128, mosi_pin, sclk_pin, dc_pin, rst_pin, cs_pin);
@@ -94,7 +95,7 @@ void setup()   {
   display.print("eyes_joystick_controlled - jwgcurrie");
   display.display();
   display.clearDisplay();
-delay(1000);
+
   startMillis = millis();
 
 }
@@ -112,7 +113,6 @@ void loop() {
   {
     analog_input(joy_x, joy_y, x_invert, y_invert);
     set_eyes(26,49,x,y);
-    Serial.println(joy_x);
   }
 }
 
