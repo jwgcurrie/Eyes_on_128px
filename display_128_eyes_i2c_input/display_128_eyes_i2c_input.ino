@@ -2,7 +2,6 @@
   DISPLAY_128_EYES_JOYSTICK
   jwgcurrie
   This program is for a 128x128 size display using SPI to communicate
-  5 pins are required to interface 
   SH1107 is used here with Arduino nano every.
   
   Abstract eyes are displayed - controlled by i2c input
